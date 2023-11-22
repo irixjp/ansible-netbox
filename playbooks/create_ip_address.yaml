@@ -1,0 +1,30 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+
+  - netbox.netbox.netbox_ip_address:
+      netbox_url: "{{ netbox_url }}"
+      netbox_token: "{{ netbox_api_key }}"
+      data:
+        prefix: "{{ netbox_prefix }}"
+        description: "{{ netbox_ip_desc | default('Created by Ansible') }}"
+      state: new
+    loop: "{{ range(1, netbox_ip_num + 1) | list }}"
+    register: ret
+
+  - ansible.builtin.fail:
+      msg: "There is no available IP address in {{ netbox_prefix }}"
+    when: ret.results | length == 0
+
+  - debug: var=ret
+
+  - set_fact:
+      ips_list: "{{ ret | json_query(query) }}"
+    vars:
+      query: 'results[].ip_address'
+
+  - debug: var=ips_list
+
+  - ansible.builtin.set_stats:
+      data:
+        nb_ip_addresses: "{{ ips_list }}"
