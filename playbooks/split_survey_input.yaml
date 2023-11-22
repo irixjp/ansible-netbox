@@ -1,0 +1,13 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+  - debug:
+      msg: "{{ netbox_site }}"
+
+  - ansible.builtin.set_stats:
+      data:
+        netbox_region: "{{ netbox_site_split[0] }}"
+        netbox_site: "{{ netbox_site_split[1] }}"
+        netbox_prefix: "{{ netbox_site_split[2] }}"
+    vars:
+      netbox_site_split: "{{ (netbox_site | regex_replace(',\\s*', ',')).split(',') }}"
