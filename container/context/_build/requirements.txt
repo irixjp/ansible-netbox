@@ -1,0 +1,10 @@
+boto
+boto3
+awscli
+yq
+awxkit
+pypi
+pan-python
+pan-os-python
+jmespath
+pynetbox

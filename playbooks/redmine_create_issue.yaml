@@ -1,0 +1,42 @@
+- hosts: all
+  gather_facts: false
+  vars:
+    issue_subject: (NetBox)アドレス払い出し通知 {{ netbox_ip_desc }}
+    issue_desc: |
+      以下の払い出しが行われました。
+      リージョン: {{ netbox_region }}
+      サイト: {{ netbox_dc_name }}
+      プリフィックス: {{ netbox_prefix }}
+      ---
+      {% for i in nb_ip_addresses %}
+      {{ i.address }} {{ i.description }}
+      {% endfor %}
+  tasks:
+  - uri:
+      url: "{{ redmine_server_url + '/issues.json' }}"
+      method: POST
+      validate_certs: false
+      headers:
+        X-Redmine-API-Key: "{{ redmine_api_key }}"
+      body_format: json
+      body:
+        issue:
+          project_id: "{{ project_id }}"
+          tracker_id: "{{ tracker_id }}"
+          subject: "{{ issue_subject }}"
+          description: "{{ issue_desc }}"
+      return_content: yes
+      status_code:
+      - 200
+      - 201
+      timeout: "5"
+    register: redmine_issue_search_result
+
+  - debug: var=redmine_issue_search_result
+  - debug: var=redmine_issue_search_result.json.issue.id
+
+  - set_stats:
+      data:
+        ticket_id: "{{ redmine_issue_search_result.json.issue.id }}"
+
+  - debug: var=ticket_id
