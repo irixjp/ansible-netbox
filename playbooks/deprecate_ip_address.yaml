@@ -1,0 +1,31 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+
+  - set_fact:
+      target_ip_address: "{{ deprecate_ip_address }}/{{ deprecate_ip_cidr }}"
+
+  - set_fact:
+      netbox_search_result: >-
+        {{
+        query('netbox.netbox.nb_lookup',
+               'ip-addresses',
+               api_endpoint=netbox_url,
+               token=netbox_api_key,
+               api_filter='address=%s' % (target_ip_address))
+        }}
+
+  - debug: var=target_ip_address
+  - debug: var=netbox_search_result
+
+  - ansible.builtin.fail:
+      msg: There is not {{ target_ip_address }} in NetBox
+    when: netbox_search_result | length == 0
+
+  - netbox.netbox.netbox_ip_address:
+      netbox_url: "{{ netbox_url }}"
+      netbox_token: "{{ netbox_api_key }}"
+      data:
+        address: "{{ target_ip_address }}"
+        description: "{{ deprecate_reason | default('Released by Ansible') }}"
+        status: "Deprecated"
